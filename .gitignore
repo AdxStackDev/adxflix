@@ -1,3 +1,6 @@
+# build output
+dist/
+
 # dependencies (none right now, but good practice)
 node_modules/
 

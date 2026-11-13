@@ -1,58 +1,63 @@
 # ADXFLIX
 
-TMDB movie discover app — static front-end with a serverless API proxy
-that keeps the TMDB bearer token out of the repo.
+TMDB movie discover app — static front-end with build-time token injection.
 
 ## How the token stays secure
 
-The front-end never touches the TMDB API directly. Instead it calls
-`/api/tmdb`, a [Vercel serverless function](api/tmdb.js) that adds the
-`Authorization: Bearer` header server-side using an environment variable.
+`adxflix.html` contains a placeholder `__TMDB_BEARER__` where the real token
+would go. During the Vercel build, `build.js` replaces that placeholder with
+the real TMDB token from a Vercel environment variable.
 
 ```
-Browser  →  /api/tmdb?path=/discover/movie&...  →  Vercel function  →  api.themoviedb.org
-                         (no token in browser)        (token from env var)
+GitHub repo     →  __TMDB_BEARER__  (placeholder, safe to commit)
+       ↓
+Vercel build    →  node build.js   (reads TMDB_BEARER from env var)
+       ↓
+Deployed HTML   →  real token injected, app works as before
 ```
 
-This means:
-- The token is **never** in the repo or visible to users.
-- The token is **never** shipped to the browser.
+The token never appears in the repo. The app calls TMDB directly from the
+browser, exactly like it did before.
 
 ## Setup
 
 ### 1. Get your TMDB token
-1. Go to <https://www.themoviedb.org/settings/api>
-2. Copy the **API Read Access Token** (the long JWT-style string).
+Go to <https://www.themoviedb.org/settings/api> → copy the **API Read Access Token**.
 
-### 2. Add the token to Vercel
-- In the Vercel dashboard → your project → **Settings → Environment Variables**
+### 2. Add it to Vercel
+Vercel dashboard → your project → Settings → Environment Variables:
 - Key: `TMDB_BEARER`
-- Value: *paste your read access token*
-- Apply to: Production, Preview, and Development
+- Value: *paste your token*
+- Apply to: Production, Preview, Development
 
 ### 3. Deploy
-```bash
-vercel --prod
-```
-Or just push to GitHub — Vercel auto-deploys from the connected repo.
+Push to GitHub (Vercel auto-deploys) or run `vercel --prod`.
 
-### Local development
+The build runs `node build.js`, which replaces the placeholder and outputs
+to `dist/`. Vercel serves that folder.
+
+## Local development
+
 ```bash
-npm i -g vercel     # if not already installed
-vercel dev           # serves adxflix.html + the /api proxy locally
+# Make sure .env.local exists with your token:
+#   TMDB_BEARER=your_token_here
+
+node dev-server.js
+# → open http://localhost:3000
 ```
 
 ## Project structure
 
 ```
 .
-├── adxflix.html       # front-end (calls /api/tmdb, not TMDB directly)
-├── layout.css         # styles
-├── api/
-│   └── tmdb.js         # serverless proxy — reads TMDB_BEARER from env
-├── vercel.json         # route "/" → adxflix.html
+├── adxflix.html     # front-end (uses __TMDB_BEARER__ placeholder)
+├── layout.css       # styles
+├── build.js         # replaces placeholder with env var → dist/
+├── dev-server.js    # local dev server (serves HTML with token injected)
+├── vercel.json       # build command + output directory
 ├── package.json
-├── .gitignore          # ignores .env, node_modules, .vercel
-├── .env.example        # documents the env var (not committed with a real value)
+├── .gitignore        # ignores .env*, dist/, node_modules/
+├── .env.local        # your real token (gitignored, never committed)
+├── .env.example      # documents the env var (no real value)
 └── README.md
 ```

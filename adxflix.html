@@ -151,25 +151,52 @@
             display: none;
         }
 
-        /* ── NEW: floating compact filter panel ── */
+        /* ── floating filter trigger button ── */
         .filter-trigger {
             position: fixed;
             top: 84px;
-            right: 24px;
+            right: 20px;
             z-index: 600;
-            width: 42px;
-            height: 42px;
-            background: #161616;
-            border: 1px solid #2e2e2e;
-            border-radius: 10px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 7px;
+            padding: 0 14px 0 10px;
+            height: 38px;
+            background: #161616;
+            border: 1px solid #2e2e2e;
+            border-radius: 20px;
             cursor: pointer;
-            color: #888;
-            font-size: 16px;
+            color: #999;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .4px;
             transition: .15s;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, .55);
+            box-shadow: 0 4px 18px rgba(0,0,0,.55);
+            white-space: nowrap;
+        }
+
+        .filter-trigger svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* knob circles filled with the button bg so they "cut" the line */
+        .filter-trigger .ft-knob {
+            fill: #161616;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            transition: fill .15s;
+        }
+
+        .filter-trigger:hover .ft-knob,
+        .filter-trigger.open .ft-knob {
+            fill: #222;
         }
 
         .filter-trigger:hover,
@@ -181,8 +208,8 @@
 
         .filter-trigger .ft-dot {
             position: absolute;
-            top: 7px;
-            right: 7px;
+            top: 6px;
+            right: 6px;
             width: 7px;
             height: 7px;
             border-radius: 50%;
@@ -196,16 +223,16 @@
 
         .filter-float {
             position: fixed;
-            top: 134px;
-            right: 24px;
+            top: 132px;
+            right: 20px;
             z-index: 599;
-            width: 340px;
-            max-height: calc(100vh - 158px);
+            width: min(340px, calc(100vw - 32px));
+            max-height: calc(100dvh - 150px);
             overflow-y: auto;
             background: #111;
             border: 1px solid #272727;
-            border-radius: 10px;
-            box-shadow: 0 18px 60px rgba(0, 0, 0, .75);
+            border-radius: 12px;
+            box-shadow: 0 18px 60px rgba(0,0,0,.75);
             padding: 16px;
             scrollbar-width: thin;
             scrollbar-color: #2a2a2a transparent;
@@ -903,46 +930,95 @@
             color: #aaa;
         }
 
-        /* ---------- Responsive ---------- */
-        @media (max-width: 900px) {
-            .filter-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        /* ===========================================
+           RESPONSIVE — Nokia 320px → foldable/tablet
+        =========================================== */
+
+        /* ── base: everything scales from here ── */
+        .tmdb-discover { padding: 90px 5% 40px; }
+        .tmdb-grid     { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+
+        /* ── small phones: 320–374px (Nokia-class) ── */
+        @media (max-width: 374px) {
+            .filter-trigger { top: 76px; right: 12px; padding: 0 10px 0 8px; height: 34px; font-size: 11px; }
+            .filter-float   { top: 118px; right: 12px; width: calc(100vw - 24px); padding: 12px; }
+            .tmdb-discover  { padding: 86px 3% 30px; }
+            .tmdb-grid      { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .tmdb-modal     { border-radius: 0; }
+            .tmdb-modal-title { font-size: 20px; }
+            .tmdb-modal-hero  { padding: 12px; min-height: 180px; }
+            .tmdb-modal-body  { padding: 0 12px 16px; }
+            .tmdb-details     { grid-template-columns: 1fr 1fr; }
+            .ff-row           { grid-template-columns: 1fr; }
         }
 
-        @media (max-width: 600px) {
-            .tmdb-discover {
-                padding: 25px 4%;
-            }
+        /* ── regular phones: 375–479px ── */
+        @media (min-width: 375px) and (max-width: 479px) {
+            .filter-trigger { top: 78px; right: 14px; }
+            .filter-float   { top: 122px; right: 14px; width: calc(100vw - 28px); }
+            .tmdb-discover  { padding: 88px 4% 32px; }
+            .tmdb-grid      { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .tmdb-modal-title { font-size: 22px; }
+            .tmdb-modal-hero  { padding: 14px; min-height: 200px; }
+            .tmdb-modal-body  { padding: 0 14px 18px; }
+        }
 
-            .tmdb-header h1 {
-                font-size: 30px;
-            }
+        /* ── large phones: 480–599px ── */
+        @media (min-width: 480px) and (max-width: 599px) {
+            .filter-float   { width: calc(100vw - 32px); }
+            .tmdb-discover  { padding: 90px 4% 35px; }
+            .tmdb-grid      { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        }
 
-            .filter-grid {
-                grid-template-columns: 1fr;
-            }
+        /* ── catch-all small: anything under 600px ── */
+        @media (max-width: 599px) {
+            .tmdb-header h1   { font-size: 28px; }
+            .filter-grid      { grid-template-columns: 1fr; }
+            .filter-group.wide { grid-column: span 1; }
+            .tmdb-modal-backdrop { padding: 0; align-items: flex-end; }
+            .tmdb-modal       { width: 100%; border-radius: 14px 14px 0 0; max-height: 92dvh; }
+            .tmdb-results-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .tmdb-pagination  { flex-wrap: wrap; gap: 4px; }
+        }
 
-            .filter-group.wide {
-                grid-column: span 1;
-            }
+        /* ── Poco X6 Pro / high-res phones: 600–767px ── */
+        @media (min-width: 600px) and (max-width: 767px) {
+            .tmdb-discover  { padding: 90px 4% 40px; }
+            .tmdb-grid      { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+            .filter-float   { width: 360px; }
+        }
 
-            .tmdb-grid {
-                grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
-                gap: 10px;
-            }
+        /* ── small tablets / large phones landscape: 768–899px ── */
+        @media (min-width: 768px) and (max-width: 899px) {
+            .tmdb-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 13px; }
+            .filter-float { width: 360px; }
+        }
 
-            .tmdb-modal-body {
-                padding: 0 15px 18px;
-            }
+        /* ── foldable inner screen / tablets: 900–1023px ── */
+        @media (min-width: 900px) and (max-width: 1023px) {
+            .tmdb-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+            .filter-float { width: 380px; }
+        }
 
-            .tmdb-modal-hero {
-                padding: 15px;
-            }
+        /* ── large tablets: 1024–1279px ── */
+        @media (min-width: 1024px) and (max-width: 1279px) {
+            .tmdb-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+        }
 
-            .tmdb-modal-title {
-                font-size: 25px;
-            }
+        /* ── foldable unfolded / large desktop: 1280px+ ── */
+        @media (min-width: 1280px) {
+            .tmdb-discover { padding: 100px 6% 50px; }
+            .tmdb-grid     { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+        }
+
+        /* ── landscape phones (height < 500px) ── */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .filter-trigger { top: 10px; }
+            .filter-float   { top: 56px; max-height: calc(100dvh - 70px); }
+            .tmdb-discover  { padding-top: 60px; }
+            .tmdb-modal-backdrop { align-items: center; padding: 10px; }
+            .tmdb-modal     { width: 100%; border-radius: 10px; max-height: 95dvh; }
+            .tmdb-modal-hero { min-height: 140px; }
         }
     </style>
 </head>
@@ -953,7 +1029,14 @@
         <div class="logo">ADXFLIX</div>
         <!-- ── FILTER TRIGGER (fixed icon) ── -->
         <button class="filter-trigger" id="filterTrigger" aria-label="Toggle filters" title="Filters">
-            ⚙
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="20" y2="12"/>
+                <line x1="4" y1="18" x2="20" y2="18"/>
+                <circle cx="8" cy="6" r="2.2" class="ft-knob"/>
+                <circle cx="16" cy="12" r="2.2" class="ft-knob"/>
+                <circle cx="10" cy="18" r="2.2" class="ft-knob"/>
+            </svg>
             <span class="ft-dot"></span>
         </button>
 
@@ -991,18 +1074,18 @@
                 <div class="ff-group">
                     <label for="sortBy">Sort</label>
                     <select id="sortBy">
-                        <option value="popularity.desc">Popularity +</option>
-                        <option value="popularity.asc">Popularity -</option>
-                        <option value="vote_average.desc">Rating +</option>
-                        <option value="vote_average.asc">Rating -</option>
-                        <option value="vote_count.desc">Votes +</option>
-                        <option value="vote_count.asc">Votes -</option>
-                        <option value="primary_release_date.desc">Date +</option>
-                        <option value="primary_release_date.asc">Date -</option>
+                        <option value="popularity.desc">Popularity ↓</option>
+                        <option value="popularity.asc">Popularity ↑</option>
+                        <option value="vote_average.desc">Rating ↓</option>
+                        <option value="vote_average.asc">Rating ↑</option>
+                        <option value="vote_count.desc">Votes ↓</option>
+                        <option value="vote_count.asc">Votes ↑</option>
+                        <option value="primary_release_date.desc">Date ↓</option>
+                        <option value="primary_release_date.asc">Date ↑</option>
                         <option value="title.asc">Title A–Z</option>
                         <option value="title.desc">Title Z–A</option>
-                        <option value="revenue.desc">Revenue +</option>
-                        <option value="revenue.asc">Revenue -</option>
+                        <option value="revenue.desc">Revenue ↓</option>
+                        <option value="revenue.asc">Revenue ↑</option>
                     </select>
                 </div>
             </div>
@@ -1029,7 +1112,7 @@
                 </div>
             </div>
 
-            <!-- <div class="ff-row full">
+            <div class="ff-row full">
                 <div class="ff-group">
                     <label for="monetizationSelect">Monetization</label>
                     <select id="monetizationSelect" multiple>
@@ -1040,7 +1123,7 @@
                         <option value="buy">Purchase</option>
                     </select>
                 </div>
-            </div> -->
+            </div>
 
             <div class="ff-check">
                 <label><input id="includeAdult" type="checkbox"> Include Adult</label>
@@ -1048,7 +1131,7 @@
 
             <div class="ff-actions">
                 <button class="ff-btn" id="resetButton" type="button">Reset</button>
-                <button class="ff-btn" id="copyQueryButton" type="button" style="display:none;">Copy URL</button>
+                <!-- <button class="ff-btn" id="copyQueryButton" type="button" style="display:none;">Copy URL</button> -->
                 <button class="ff-btn go" id="searchButton" type="button">Search</button>
             </div>
 
@@ -1161,14 +1244,17 @@
         /* ============================================================
            CONFIGURATION
            ============================================================ */
-        // All TMDB data requests go through our own serverless proxy (/api/tmdb).
-        // The proxy adds the Bearer token server-side using a Vercel environment
-        // variable, so the token never appears in the repo or the browser.
-        const TMDB_PROXY = "/api/tmdb";
+        const TMDB_API = "https://api.themoviedb.org/3";
         const TMDB_IMAGE = "https://image.tmdb.org/t/p/w500";
         const TMDB_BACKDROP = "https://image.tmdb.org/t/p/w780";
         const TMDB_MAX_PAGE = 500;                 // TMDB never serves pages beyond 500
         const DEFAULT_REGION = "IN";
+
+        // Paste your TMDB "API Read Access Token" here.
+        // Token is injected at build time from TMDB_BEARER env var (Vercel dashboard).
+        // For local dev: run "node dev-server.js" (reads from .env.local).
+        const TMDB_BEARER = "__TMDB_BEARER__";
+
 
         /* ============================================================
            STATE
@@ -1236,8 +1322,7 @@
            TMDB API
            ============================================================ */
         async function tmdbRequest(endpoint, params = {}) {
-            const url = new URL(TMDB_PROXY, window.location.origin);
-            url.searchParams.set("path", endpoint);
+            const url = new URL(TMDB_API + endpoint);
 
             for (const [key, value] of Object.entries(params)) {
                 if (value !== undefined && value !== null && value !== "") {
@@ -1247,6 +1332,7 @@
 
             const response = await fetch(url, {
                 headers: {
+                    Authorization: `Bearer ${TMDB_BEARER}`,
                     accept: "application/json"
                 }
             });
@@ -1334,7 +1420,7 @@
                     loadLanguages()
                 ]);
                 setStatus("");
-                updateQueryPreview();
+                // updateQueryPreview();
                 searchMovies(1); /* auto-load default results on page open */
             } catch (error) {
                 setStatus("");
@@ -1361,13 +1447,11 @@
             const language = $("languageSelect").value;
             const region = $("regionSelect").value;
             const year = $("releaseYear").value;
-            const monetization = selectedValues($("monetizationSelect"));
 
             if (provider) params.with_watch_providers = provider;
             if (region) params.watch_region = region;
             if (language) params.with_original_language = language;
             if (year) params.primary_release_year = year;
-            if (monetization.length) params.with_watch_monetization_types = monetization.join("|");
 
             const dateFrom = $("releaseDateFrom").value;
             if (dateFrom) params["primary_release_date.gte"] = dateFrom;
@@ -1384,24 +1468,18 @@
             return params;
         }
 
-        function updateQueryPreview() {
-            const url = new URL(TMDB_PROXY, window.location.origin);
-            url.searchParams.set("path", "/discover/movie");
+        // function updateQueryPreview() {
+        //     const url = new URL(TMDB_API + "/discover/movie");
+        //     url.search = new URLSearchParams(buildDiscoverParams(1)).toString();
 
-            for (const [key, value] of Object.entries(buildDiscoverParams(1))) {
-                if (value !== undefined && value !== null && value !== "") {
-                    url.searchParams.set(key, value);
-                }
-            }
+        //     state.lastUrl = url.toString();
+        //     // $("queryPreviewUrl").textContent = state.lastUrl;
+        //     $("queryPreview").classList.add("show");       /* ff-qp uses .show */
+        //     // $("copyQueryButton").style.display = "";        /* reveal copy btn */
 
-            state.lastUrl = url.toString();
-            $("queryPreviewUrl").textContent = state.lastUrl;
-            $("queryPreview").classList.add("show");       /* ff-qp uses .show */
-            $("copyQueryButton").style.display = "";        /* reveal copy btn */
-
-            /* dot on trigger if any non-default filter active */
-            updateFilterDot();
-        }
+        //     /* dot on trigger if any non-default filter active */
+        //     updateFilterDot();
+        // }
 
 
         /* ============================================================
@@ -1409,7 +1487,7 @@
            ============================================================ */
         async function searchMovies(page = 1) {
             clearError($("tmdbError"));
-            updateQueryPreview();
+            // updateQueryPreview();
 
             $("searchButton").disabled = true;
             setStatus(`Searching TMDB — page ${page}...`);
@@ -1734,8 +1812,6 @@
         $("searchButton").addEventListener("click", () => searchMovies(1));
 
         $("resetButton").addEventListener("click", () => {
-            Array.from($("monetizationSelect").options).forEach(o => (o.selected = false));
-
             $("providerSelect").value = "";
             $("languageSelect").value = "";
             $("releaseYear").value = "";
@@ -1747,21 +1823,21 @@
 
             $("includeAdult").checked = false;
 
-            $("queryPreview").classList.remove("show");
-            $("copyQueryButton").style.display = "none";
+            // $("queryPreview").classList.remove("show");
+            // $("copyQueryButton").style.display = "none";D
             $("filterTrigger").classList.remove("active-filters");
             clearError($("tmdbError"));
         });
 
-        $("copyQueryButton").addEventListener("click", async () => {
-            try {
-                await navigator.clipboard.writeText(state.lastUrl);
-                $("copyQueryButton").textContent = "Copied ✓";
-                setTimeout(() => ($("copyQueryButton").textContent = "Copy URL"), 1400);
-            } catch {
-                showError($("tmdbError"), "Clipboard access was blocked by the browser.");
-            }
-        });
+        // $("copyQueryButton").addEventListener("click", async () => {
+        //     try {
+        //         await navigator.clipboard.writeText(state.lastUrl);
+        //         $("copyQueryButton").textContent = "Copied ✓";
+        //         setTimeout(() => ($("copyQueryButton").textContent = "Copy URL"), 1400);
+        //     } catch {
+        //         showError($("tmdbError"), "Clipboard access was blocked by the browser.");
+        //     }
+        // });
 
         // Changing the region changes which providers exist, so reload that list.
         $("regionSelect").addEventListener("change", async () => {
@@ -1770,17 +1846,17 @@
             } catch (error) {
                 showError($("tmdbError"), "Unable to reload providers. " + error.message);
             }
-            updateQueryPreview();
+            // updateQueryPreview();
         });
 
         // Keep the API URL preview in sync with every filter.
-        [
-            "providerSelect", "languageSelect", "monetizationSelect", "releaseYear",
-            "releaseDateFrom", "releaseDateTo", "sortBy", "minimumRating",
-            "minimumVotes", "includeAdult"
-        ].forEach(id => {
-            $(id).addEventListener("change", updateQueryPreview);
-        });
+        // [
+        //     "providerSelect", "languageSelect", "releaseYear",
+        //     "releaseDateFrom", "releaseDateTo", "sortBy", "minimumRating",
+        //     "minimumVotes", "includeAdult"
+        // ].forEach(id => {
+        //     $(id).addEventListener("change", updateQueryPreview);
+        // });
 
         // Modal closing: X button, click on dark backdrop, or Escape key.
         $("closeModal").addEventListener("click", closeMovieModal);
@@ -1808,7 +1884,6 @@
                 $("releaseDateTo").value ||
                 $("minimumRating").value ||
                 $("minimumVotes").value ||
-                selectedValues($("monetizationSelect")).length ||
                 $("includeAdult").checked;
             $("filterTrigger").classList.toggle("active-filters", !!hasFilter);
         }
