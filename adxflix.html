@@ -1212,7 +1212,7 @@
                             <div>Stream unavailable — try the other source</div>
                         </div>
                         <iframe id="vidsrcPlayer" title="Movie Player" allowfullscreen
-                            allow="autoplay; fullscreen; picture-in-picture" hidden></iframe>
+                            allow="autoplay; fullscreen; picture-in-picture; encrypted-media" hidden></iframe>
                     </div>
 
                     <div class="tmdb-source-row">
@@ -1222,8 +1222,9 @@
                             <span id="sourceQuality">—</span>
                         </div>
                         <div class="source-buttons">
-                            <button class="source-btn active" id="srcBtnImdb" type="button">IMDb Player</button>
-                            <button class="source-btn" id="srcBtnTmdb" type="button">TMDB Player</button>
+                            <button class="source-btn active" id="srcBtnImdb" type="button">IMDb</button>
+                            <button class="source-btn" id="srcBtnTmdb" type="button">TMDB</button>
+                            <button class="source-btn" id="srcBtnBolt" type="button">Bolt</button>
                         </div>
                     </div>
 
@@ -1674,13 +1675,20 @@
         }
 
         /* ============================================================
-           VIDSRC PLAYER
+           PLAYER  (VidSrc IMDb · VidSrc TMDB · VidBolt)
            ============================================================ */
-        const VIDSRC_INFO = "https://vidsrc.sh/info/movie";
+        const VIDSRC_INFO   = "https://vidsrc.sh/info/movie";
+        const VIDBOLT_BASE  = "https://vidbolt.xyz/movie";
         let _vidsrcData = null;
+        let _currentMovie  = null;
 
         async function loadVidsrcPlayer(movie) {
             resetPlayer();
+            _currentMovie = movie;
+
+            // VidBolt works immediately with TMDB id — enable it straight away
+            $("srcBtnBolt").classList.remove("disabled");
+
             const id = movie.imdb_id || movie.id;
             try {
                 const ctrl = new AbortController();
@@ -1702,10 +1710,12 @@
 
                 if (data.embed_url) setPlayerSrc(data.embed_url, "imdb");
                 else if (data.embed_url_tmdb) setPlayerSrc(data.embed_url_tmdb, "tmdb");
-                else showPlayerUnavail();
+                else setPlayerSrc(`${VIDBOLT_BASE}/${movie.id}`, "vidbolt");
             } catch {
-                showPlayerUnavail();
+                // VidSrc unavailable — fall back to VidBolt automatically
                 $("sourceTitle").textContent = movie.title || "—";
+                $("sourceQuality").textContent = "HD";
+                setPlayerSrc(`${VIDBOLT_BASE}/${movie.id}`, "vidbolt");
             }
         }
 
@@ -1716,6 +1726,7 @@
             $("vidsrcPlayer").hidden = false;
             $("srcBtnImdb").classList.toggle("active", source === "imdb");
             $("srcBtnTmdb").classList.toggle("active", source === "tmdb");
+            $("srcBtnBolt").classList.toggle("active", source === "vidbolt");
         }
 
         function showPlayerUnavail() {
@@ -1733,6 +1744,7 @@
             $("playerUnavail").classList.remove("show");
             $("srcBtnImdb").classList.remove("active", "disabled");
             $("srcBtnTmdb").classList.remove("active", "disabled");
+            $("srcBtnBolt").classList.remove("active", "disabled");
             $("sourceTitle").textContent = "—";
             $("sourceQuality").textContent = "—";
         }
@@ -1742,6 +1754,9 @@
         });
         $("srcBtnTmdb").addEventListener("click", () => {
             if (_vidsrcData?.embed_url_tmdb) setPlayerSrc(_vidsrcData.embed_url_tmdb, "tmdb");
+        });
+        $("srcBtnBolt").addEventListener("click", () => {
+            if (_currentMovie) setPlayerSrc(`${VIDBOLT_BASE}/${_currentMovie.id}`, "vidbolt");
         });
 
         function renderProviders(byCountry) {
