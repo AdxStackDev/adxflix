@@ -1,0 +1,15 @@
+# dependencies (none right now, but good practice)
+node_modules/
+
+# local env files — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.log

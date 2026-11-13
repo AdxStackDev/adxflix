@@ -1,0 +1,1 @@
+{"name": "adxflix", "private": true, "description": "ADXFLIX — TMDB movie discover app (static front-end + serverless API proxy)", "engines": {"node": ">=18"}}

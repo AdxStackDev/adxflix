@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADXFLIX</title>
+    <link rel="stylesheet" href="layout.css">
+    <style>
+        /* ---------- Layout ---------- */
+        .tmdb-discover {
+            padding: 40px 5%;
+        }
+
+        .tmdb-header {
+            margin-bottom: 30px;
+        }
+
+        .tmdb-header h1 {
+            margin: 0;
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: -1.5px;
+        }
+
+        .tmdb-header h1 span {
+            color: #e50914;
+        }
+
+        .tmdb-header p {
+            margin-top: 8px;
+            color: #777;
+            font-size: 13px;
+        }
+
+        /* ---------- Filter panel ---------- */
+        .filter-panel {
+            background: #111;
+            border: 1px solid #252525;
+            border-radius: 8px;
+            padding: 22px;
+            margin-bottom: 25px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .filter-group.wide {
+            grid-column: span 2;
+        }
+
+        .filter-group>label {
+            color: #777;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-group input[type="number"],
+        .filter-group input[type="date"],
+        .filter-group select {
+            width: 100%;
+            min-height: 40px;
+            background: #181818;
+            border: 1px solid #292929;
+            border-radius: 5px;
+            color: #eee;
+            padding: 9px 10px;
+            outline: none;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: #555;
+        }
+
+        .filter-group select[multiple] {
+            min-height: 120px;
+        }
+
+        .filter-help {
+            color: #555;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .checkbox-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            height: 40px;
+        }
+
+        .checkbox-row label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #aaa;
+            font-size: 11px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            border: 1px solid #303030;
+            background: #191919;
+            color: #ccc;
+            padding: 10px 16px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .filter-btn:hover {
+            background: #252525;
+            color: #fff;
+        }
+
+        .filter-btn.primary {
+            background: #e50914;
+            border-color: #e50914;
+            color: #fff;
+        }
+
+        .filter-btn.primary:hover {
+            background: #f6121d;
+        }
+
+        .filter-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .filter-btn.hidden {
+            display: none;
+        }
+
+        /* ── NEW: floating compact filter panel ── */
+        .filter-trigger {
+            position: fixed;
+            top: 84px;
+            right: 24px;
+            z-index: 600;
+            width: 42px;
+            height: 42px;
+            background: #161616;
+            border: 1px solid #2e2e2e;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #888;
+            font-size: 16px;
+            transition: .15s;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, .55);
+        }
+
+        .filter-trigger:hover,
+        .filter-trigger.open {
+            background: #222;
+            border-color: #555;
+            color: #fff;
+        }
+
+        .filter-trigger .ft-dot {
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #e50914;
+            display: none;
+        }
+
+        .filter-trigger.active-filters .ft-dot {
+            display: block;
+        }
+
+        .filter-float {
+            position: fixed;
+            top: 134px;
+            right: 24px;
+            z-index: 599;
+            width: 340px;
+            max-height: calc(100vh - 158px);
+            overflow-y: auto;
+            background: #111;
+            border: 1px solid #272727;
+            border-radius: 10px;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, .75);
+            padding: 16px;
+            scrollbar-width: thin;
+            scrollbar-color: #2a2a2a transparent;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-8px) scale(.97);
+            transform-origin: top right;
+            transition: opacity .16s, transform .16s;
+        }
+
+        .filter-float.open {
+            opacity: 1;
+            pointer-events: all;
+            transform: none;
+        }
+
+        .filter-float::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .filter-float::-webkit-scrollbar-thumb {
+            background: #2a2a2a;
+            border-radius: 2px;
+        }
+
+        .ff-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 11px;
+            margin-bottom: 13px;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .ff-title {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #555;
+        }
+
+        .ff-close {
+            background: none;
+            border: none;
+            color: #444;
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1;
+            padding: 2px 4px;
+            transition: color .15s;
+        }
+
+        .ff-close:hover {
+            color: #fff;
+        }
+
+        .ff-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .ff-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        .ff-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ff-group label {
+            color: #4a4a4a;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .ff-group select,
+        .ff-group input {
+            width: 100%;
+            height: 32px;
+            background: #0d0d0d;
+            border: 1px solid #232323;
+            border-radius: 5px;
+            color: #ccc;
+            padding: 0 8px;
+            font-size: 11px;
+            outline: none;
+            transition: border-color .15s;
+            color-scheme: dark;
+        }
+
+        .ff-group select:focus,
+        .ff-group input:focus {
+            border-color: #404040;
+        }
+
+        .ff-group select[multiple] {
+            height: 72px;
+            padding: 4px 6px;
+        }
+
+        .ff-check {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 0;
+        }
+
+        .ff-check label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #777;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .ff-actions {
+            display: flex;
+            gap: 7px;
+            padding-top: 11px;
+            margin-top: 4px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .ff-btn {
+            flex: 1;
+            height: 32px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid #252525;
+            background: #161616;
+            color: #aaa;
+            transition: .15s;
+        }
+
+        .ff-btn:hover {
+            background: #222;
+            color: #fff;
+        }
+
+        .ff-btn.go {
+            background: #e50914;
+            border-color: #e50914;
+            color: #fff;
+            flex: 2;
+        }
+
+        .ff-btn.go:hover {
+            background: #f6121d;
+        }
+
+        .ff-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .ff-qp {
+            display: none;
+            margin-top: 10px;
+            padding: 8px;
+            background: #080808;
+            border: 1px solid #1a1a1a;
+            border-radius: 5px;
+        }
+
+        .ff-qp.show {
+            display: block;
+        }
+
+        .ff-qp-label {
+            color: #3a3a3a;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .ff-qp-url {
+            color: #555;
+            font-family: Consolas, monospace;
+            font-size: 9px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .query-preview {
+            display: none;
+        }
+
+        .query-preview.active {
+            display: none;
+        }
+
+        /* keep hidden — shown inside float panel */
+
+        /* ---------- Status / error ---------- */
+        .tmdb-status {
+            display: none;
+            color: #666;
+            font-size: 12px;
+            padding: 15px 0;
+        }
+
+        .tmdb-status.active {
+            display: block;
+        }
+
+        .tmdb-error {
+            display: none;
+            background: #321010;
+            border: 1px solid #642020;
+            color: #ff9999;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .tmdb-error.active {
+            display: block;
+        }
+
+        /* ---------- Results header + pagination ---------- */
+        .tmdb-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tmdb-results-count {
+            color: #777;
+            font-size: 12px;
+        }
+
+        .tmdb-results-count strong {
+            color: #ddd;
+        }
+
+        .tmdb-pagination {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tmdb-page-btn {
+            background: #151515;
+            border: 1px solid #292929;
+            color: #aaa;
+            padding: 7px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .tmdb-page-btn:hover {
+            background: #242424;
+            color: #fff;
+        }
+
+        .tmdb-page-btn.active {
+            background: #e50914;
+            border-color: #e50914;
+            color: #fff;
+        }
+
+        .tmdb-page-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .tmdb-page-label {
+            color: #555;
+            font-size: 10px;
+            padding: 0 5px;
+        }
+
+        /* ---------- Movie grid ---------- */
+        .tmdb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .tmdb-card {
+            position: relative;
+            aspect-ratio: 2 / 3;
+            background: #111;
+            border: 1px solid #252525;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .tmdb-card:hover,
+        .tmdb-card:focus-visible {
+            transform: scale(1.04) translateY(-5px);
+            border-color: #555;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, .8);
+            z-index: 5;
+            outline: none;
+        }
+
+        .tmdb-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .tmdb-card-fallback {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 15px;
+            text-align: center;
+            color: #555;
+        }
+
+        .tmdb-card-fallback strong {
+            color: #777;
+            font-size: 12px;
+        }
+
+        .tmdb-card-rating {
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            background: rgba(0, 0, 0, .85);
+            color: #f5c518;
+            border-radius: 3px;
+            padding: 4px 7px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .tmdb-card-language {
+            position: absolute;
+            top: 7px;
+            left: 7px;
+            background: rgba(0, 0, 0, .85);
+            color: #ccc;
+            border-radius: 3px;
+            padding: 4px 7px;
+            font-size: 9px;
+            font-weight: 800;
+        }
+
+        .tmdb-card-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 13px;
+            background: linear-gradient(0deg, rgba(0, 0, 0, .96), rgba(0, 0, 0, .65) 35%, transparent 75%);
+            opacity: 0;
+            transition: .2s;
+        }
+
+        .tmdb-card:hover .tmdb-card-overlay,
+        .tmdb-card:focus-visible .tmdb-card-overlay {
+            opacity: 1;
+        }
+
+        .tmdb-card-title {
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .tmdb-card-meta {
+            color: #aaa;
+            font-size: 10px;
+            margin-top: 4px;
+        }
+
+        .tmdb-card-play {
+            color: #aaa;
+            font-size: 10px;
+            margin-top: 7px;
+        }
+
+        .tmdb-card-play::before {
+            content: "▶";
+            color: #e50914;
+            margin-right: 5px;
+        }
+
+        .tmdb-empty {
+            display: none;
+            text-align: center;
+            padding: 70px 20px;
+            color: #555;
+        }
+
+        .tmdb-empty.active {
+            display: block;
+        }
+
+        .tmdb-empty strong {
+            display: block;
+            color: #777;
+            margin-bottom: 7px;
+        }
+
+        /* ---------- Modal ---------- */
+        .tmdb-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, .92);
+            opacity: 0;
+            pointer-events: none;
+            transition: .2s;
+        }
+
+        .tmdb-modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .tmdb-modal {
+            width: min(950px, 100%);
+            max-height: calc(100vh - 30px);
+            overflow-y: auto;
+            background: #111;
+            border: 1px solid #292929;
+            border-radius: 9px;
+            transform: translateY(10px) scale(.98);
+            transition: .2s;
+        }
+
+        .tmdb-modal-backdrop.active .tmdb-modal {
+            transform: none;
+        }
+
+        .tmdb-modal-close-row {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 12px 0;
+        }
+
+        .tmdb-modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(15, 15, 15, .95);
+            border: 1px solid #333;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .tmdb-modal-close:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .tmdb-modal-hero {
+            min-height: 240px;
+            margin-top: -32px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            padding: 25px;
+        }
+
+        .tmdb-modal-bg {
+            position: absolute;
+            inset: 0;
+            background-position: center;
+            background-size: cover;
+            border-radius: 9px 9px 0 0;
+        }
+
+        .tmdb-modal-gradient {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, #111, rgba(17, 17, 17, .65) 48%, rgba(17, 17, 17, .08));
+        }
+
+        .tmdb-modal-title-box {
+            position: relative;
+            z-index: 2;
+        }
+
+        .tmdb-modal-title {
+            color: #fff;
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            line-height: 1.05;
+        }
+
+        .tmdb-modal-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 9px;
+            color: #ccc;
+            font-size: 12px;
+        }
+
+        .tmdb-modal-rating {
+            color: #f5c518;
+            font-weight: 800;
+        }
+
+        .tmdb-modal-body {
+            padding: 0 25px 25px;
+        }
+
+        .tmdb-modal-loading {
+            padding: 40px;
+            text-align: center;
+            color: #666;
+        }
+
+        .tmdb-spinner {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #292929;
+            border-top-color: #e50914;
+            border-radius: 50%;
+            animation: tmdb-spin .7s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes tmdb-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .tmdb-overview {
+            color: #bbb;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0 0 18px;
+        }
+
+        .tmdb-section-title {
+            color: #555;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 20px 0 10px;
+        }
+
+        .tmdb-player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border: 1px solid #222;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tmdb-player iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+        }
+
+        .tmdb-player-empty {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 12px;
+            background: #050505;
+            gap: 6px;
+        }
+
+        .tmdb-player-unavail {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #070707;
+            color: #555;
+            gap: 10px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .tmdb-player-unavail.show {
+            display: flex;
+        }
+
+        .tmdb-player-unavail-icon {
+            font-size: 36px;
+            opacity: .25;
+        }
+
+        .tmdb-source-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0 18px;
+        }
+
+        .tmdb-source-status {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .tmdb-source-status strong {
+            color: #fff;
+        }
+
+        .tmdb-providers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tmdb-provider {
+            background: #181818;
+            border: 1px solid #292929;
+            color: #ccc;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .tmdb-provider small {
+            color: #777;
+            margin-left: 5px;
+        }
+
+        .tmdb-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .tmdb-detail {
+            background: #0d0d0d;
+            border: 1px solid #1d1d1d;
+            border-radius: 5px;
+            padding: 11px;
+        }
+
+        .tmdb-detail-label {
+            color: #555;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .tmdb-detail-value {
+            color: #ccc;
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        .tmdb-detail-value a {
+            color: #aaa;
+        }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 900px) {
+            .filter-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .tmdb-discover {
+                padding: 25px 4%;
+            }
+
+            .tmdb-header h1 {
+                font-size: 30px;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-group.wide {
+                grid-column: span 1;
+            }
+
+            .tmdb-grid {
+                grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+                gap: 10px;
+            }
+
+            .tmdb-modal-body {
+                padding: 0 15px 18px;
+            }
+
+            .tmdb-modal-hero {
+                padding: 15px;
+            }
+
+            .tmdb-modal-title {
+                font-size: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="logo">ADXFLIX</div>
+        <!-- ── FILTER TRIGGER (fixed icon) ── -->
+        <button class="filter-trigger" id="filterTrigger" aria-label="Toggle filters" title="Filters">
+            ⚙
+            <span class="ft-dot"></span>
+        </button>
+
+        <!-- ── FLOATING FILTER PANEL ── -->
+        <div class="filter-float" id="filterFloat">
+
+            <div class="ff-head">
+                <span class="ff-title">Filters</span>
+                <button class="ff-close" id="ffClose" aria-label="Close filters">✕</button>
+            </div>
+
+            <div class="ff-row full">
+                <div class="ff-group">
+                    <label for="providerSelect">Provider</label>
+                    <select id="providerSelect"></select>
+                </div>
+            </div>
+
+            <div class="ff-row">
+                <div class="ff-group">
+                    <label for="regionSelect">Region</label>
+                    <select id="regionSelect"></select>
+                </div>
+                <div class="ff-group">
+                    <label for="languageSelect">Language</label>
+                    <select id="languageSelect"></select>
+                </div>
+            </div>
+
+            <div class="ff-row">
+                <div class="ff-group">
+                    <label for="releaseYear">Year</label>
+                    <select id="releaseYear"></select>
+                </div>
+                <div class="ff-group">
+                    <label for="sortBy">Sort</label>
+                    <select id="sortBy">
+                        <option value="popularity.desc">Popularity +</option>
+                        <option value="popularity.asc">Popularity -</option>
+                        <option value="vote_average.desc">Rating +</option>
+                        <option value="vote_average.asc">Rating -</option>
+                        <option value="vote_count.desc">Votes +</option>
+                        <option value="vote_count.asc">Votes -</option>
+                        <option value="primary_release_date.desc">Date +</option>
+                        <option value="primary_release_date.asc">Date -</option>
+                        <option value="title.asc">Title A–Z</option>
+                        <option value="title.desc">Title Z–A</option>
+                        <option value="revenue.desc">Revenue +</option>
+                        <option value="revenue.asc">Revenue -</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="ff-row">
+                <div class="ff-group">
+                    <label for="releaseDateFrom">From Date</label>
+                    <input id="releaseDateFrom" type="date">
+                </div>
+                <div class="ff-group">
+                    <label for="releaseDateTo">To Date</label>
+                    <input id="releaseDateTo" type="date">
+                </div>
+            </div>
+
+            <div class="ff-row">
+                <div class="ff-group">
+                    <label for="minimumRating">Min Rating</label>
+                    <input id="minimumRating" type="number" min="0" max="10" step="0.1" placeholder="e.g. 7.0">
+                </div>
+                <div class="ff-group">
+                    <label for="minimumVotes">Min Votes</label>
+                    <input id="minimumVotes" type="number" min="0" placeholder="e.g. 100">
+                </div>
+            </div>
+
+            <!-- <div class="ff-row full">
+                <div class="ff-group">
+                    <label for="monetizationSelect">Monetization</label>
+                    <select id="monetizationSelect" multiple>
+                        <option value="flatrate">Subscription</option>
+                        <option value="free">Free</option>
+                        <option value="ads">With Ads</option>
+                        <option value="rent">Rental</option>
+                        <option value="buy">Purchase</option>
+                    </select>
+                </div>
+            </div> -->
+
+            <div class="ff-check">
+                <label><input id="includeAdult" type="checkbox"> Include Adult</label>
+            </div>
+
+            <div class="ff-actions">
+                <button class="ff-btn" id="resetButton" type="button">Reset</button>
+                <button class="ff-btn" id="copyQueryButton" type="button" style="display:none;">Copy URL</button>
+                <button class="ff-btn go" id="searchButton" type="button">Search</button>
+            </div>
+
+            <!-- <div class="ff-qp" id="queryPreview">
+                <div class="ff-qp-label">API URL</div>
+                <div class="ff-qp-url" id="queryPreviewUrl"></div>
+            </div> -->
+
+        </div>
+        <div class="nav-right">
+            <!-- <a href="index.html">Search</a>
+        <a href="movies.html">Lists</a>
+        <a href="latest.html">Latest</a>
+        <a class="active" href="tmdb_discover.html">Discover</a> -->
+        </div>
+    </nav>
+
+    <main class="tmdb-discover">
+
+        <section class="tmdb-header">
+            <!-- <h1>TMDB <span>Discover</span></h1> -->
+            <!-- <p>Discover movies by streaming provider, region, language, monetization type and release date.</p> -->
+        </section>
+
+        <div class="tmdb-error" id="tmdbError"></div>
+
+        <div class="tmdb-status" id="tmdbStatus"></div>
+
+        <section class="tmdb-results-header">
+            <div class="tmdb-results-count" id="resultsCount">No search performed.</div>
+            <div class="tmdb-pagination" id="pagination"></div>
+        </section>
+
+        <section class="tmdb-grid" id="movieGrid"></section>
+
+        <section class="tmdb-empty" id="emptyState">
+            <strong>No movies found</strong>
+            Try changing your filters and searching again.
+        </section>
+
+    </main>
+
+    <!-- ================= MOVIE MODAL ================= -->
+    <div class="tmdb-modal-backdrop" id="movieModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="tmdb-modal">
+
+            <div class="tmdb-modal-close-row">
+                <button class="tmdb-modal-close" id="closeModal" type="button" aria-label="Close">✕</button>
+            </div>
+
+            <section class="tmdb-modal-hero">
+                <div class="tmdb-modal-bg" id="modalBackground"></div>
+                <div class="tmdb-modal-gradient"></div>
+                <div class="tmdb-modal-title-box">
+                    <div class="tmdb-modal-title" id="modalTitle">—</div>
+                    <div class="tmdb-modal-meta" id="modalMeta"></div>
+                </div>
+            </section>
+
+            <section class="tmdb-modal-body">
+                <div class="tmdb-modal-loading" id="modalLoading">
+                    <div class="tmdb-spinner"></div>
+                    Loading movie information...
+                </div>
+
+                <div class="tmdb-error" id="modalError"></div>
+
+                <div id="modalContent" hidden>
+                    <p class="tmdb-overview" id="modalOverview"></p>
+
+                    <div class="tmdb-section-title">Watch</div>
+                    <div class="tmdb-player">
+                        <div class="tmdb-player-empty" id="playerEmpty">
+                            <span>▶</span> No stream loaded
+                        </div>
+                        <div class="tmdb-player-unavail" id="playerUnavail">
+                            <div class="tmdb-player-unavail-icon">⊘</div>
+                            <div>Stream unavailable — try the other source</div>
+                        </div>
+                        <iframe id="vidsrcPlayer" title="Movie Player" allowfullscreen
+                            allow="autoplay; fullscreen; picture-in-picture" hidden></iframe>
+                    </div>
+
+                    <div class="tmdb-source-row">
+                        <div class="tmdb-source-status">
+                            <strong id="sourceTitle">—</strong>
+                            <span> · </span>
+                            <span id="sourceQuality">—</span>
+                        </div>
+                        <div class="source-buttons">
+                            <button class="source-btn active" id="srcBtnImdb" type="button">IMDb Player</button>
+                            <button class="source-btn" id="srcBtnTmdb" type="button">TMDB Player</button>
+                        </div>
+                    </div>
+
+                    <div class="tmdb-section-title" id="providersTitle">Where to watch</div>
+                    <div class="tmdb-providers" id="providerList"></div>
+
+                    <div class="tmdb-section-title">Details</div>
+                    <div class="tmdb-details" id="movieDetails"></div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        "use strict";
+
+        /* ============================================================
+           CONFIGURATION
+           ============================================================ */
+        // All TMDB data requests go through our own serverless proxy (/api/tmdb).
+        // The proxy adds the Bearer token server-side using a Vercel environment
+        // variable, so the token never appears in the repo or the browser.
+        const TMDB_PROXY = "/api/tmdb";
+        const TMDB_IMAGE = "https://image.tmdb.org/t/p/w500";
+        const TMDB_BACKDROP = "https://image.tmdb.org/t/p/w780";
+        const TMDB_MAX_PAGE = 500;                 // TMDB never serves pages beyond 500
+        const DEFAULT_REGION = "IN";
+
+        /* ============================================================
+           STATE
+           ============================================================ */
+        const state = {
+            page: 1,
+            totalPages: 0,
+            totalResults: 0,
+            lastUrl: "",
+            results: []
+        };
+
+
+        /* ============================================================
+           HELPERS
+           ============================================================ */
+        const $ = id => document.getElementById(id);
+
+        function escapeHTML(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function selectedValues(select) {
+            return Array.from(select.selectedOptions).map(o => o.value).filter(Boolean);
+        }
+
+        function yearOf(dateString) {
+            return dateString ? dateString.substring(0, 4) : "—";
+        }
+
+        function showError(el, message) {
+            el.textContent = message;
+            el.classList.add("active");
+        }
+
+        function clearError(el) {
+            el.textContent = "";
+            el.classList.remove("active");
+        }
+
+        function setStatus(message) {
+            const el = $("tmdbStatus");
+            el.textContent = message || "";
+            el.classList.toggle("active", Boolean(message));
+        }
+
+        function fillSelect(select, items, valueKey, labelFn) {
+            const fragment = document.createDocumentFragment();
+            items.forEach(item => {
+                const option = document.createElement("option");
+                option.value = item[valueKey];
+                option.textContent = labelFn(item);
+                fragment.appendChild(option);
+            });
+            select.appendChild(fragment);
+        }
+
+
+        /* ============================================================
+           TMDB API
+           ============================================================ */
+        async function tmdbRequest(endpoint, params = {}) {
+            const url = new URL(TMDB_PROXY, window.location.origin);
+            url.searchParams.set("path", endpoint);
+
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== undefined && value !== null && value !== "") {
+                    url.searchParams.set(key, value);
+                }
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    accept: "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                let message = `TMDB API error: HTTP ${response.status}`;
+                try {
+                    const data = await response.json();
+                    if (data.status_message) message += ` — ${data.status_message}`;
+                } catch { /* body was not JSON; keep the generic message */ }
+                throw new Error(message);
+            }
+
+            return response.json();
+        }
+
+
+        /* ============================================================
+           FILTER OPTIONS (providers, languages, regions)
+           ============================================================ */
+        async function loadProviders(region) {
+            // Passing watch_region returns only providers available in that country.
+            const data = await tmdbRequest("/watch/providers/movie", {
+                language: "en-US",
+                watch_region: region
+            });
+
+            const providers = (data.results || [])
+                .filter(p => p.provider_id)
+                .sort((a, b) => a.provider_name.localeCompare(b.provider_name));
+
+            const select = $("providerSelect");
+            select.innerHTML = '<option value="">Any Provider</option>';
+            fillSelect(select, providers, "provider_id", p => `${p.provider_name} — ${p.provider_id}`);
+        }
+
+        async function loadLanguages() {
+            const languages = await tmdbRequest("/configuration/languages");
+            const name = l => l.english_name || l.name || l.iso_639_1;
+
+            const sorted = languages
+                .filter(l => l.iso_639_1)
+                .sort((a, b) => name(a).localeCompare(name(b)));
+
+            const select = $("languageSelect");
+            select.innerHTML = '<option value="">Any Language</option>';
+            fillSelect(select, sorted, "iso_639_1", l => `${name(l)} — ${l.iso_639_1}`);
+        }
+
+        async function loadRegions() {
+            const regions = await tmdbRequest("/configuration/countries", { language: "en-US" });
+            const name = r => r.english_name || r.native_name || r.iso_3166_1;
+
+            const sorted = regions
+                .filter(r => r.iso_3166_1)
+                .sort((a, b) => name(a).localeCompare(name(b)));
+
+            const select = $("regionSelect");
+            select.innerHTML = '<option value="">Any Region</option>';
+            fillSelect(select, sorted, "iso_3166_1", r => `${name(r)} — ${r.iso_3166_1}`);
+            select.value = DEFAULT_REGION;
+        }
+
+        function loadYears() {
+            const select = $("releaseYear");
+            const thisYear = new Date().getFullYear() + 1;   // include next year's upcoming releases
+            select.innerHTML = '<option value="">Any Year</option>';
+
+            for (let year = thisYear; year >= 1900; year--) {
+                const option = document.createElement("option");
+                option.value = year;
+                option.textContent = year;
+                select.appendChild(option);
+            }
+        }
+
+        async function loadFilters() {
+            loadYears();
+            setStatus("Loading TMDB providers, languages and regions...");
+            try {
+                // Regions must exist first so the provider list can be region-specific.
+                await loadRegions();
+                await Promise.all([
+                    loadProviders($("regionSelect").value),
+                    loadLanguages()
+                ]);
+                setStatus("");
+                updateQueryPreview();
+                searchMovies(1); /* auto-load default results on page open */
+            } catch (error) {
+                setStatus("");
+                showError($("tmdbError"), "Unable to load filter options. " + error.message);
+            }
+        }
+
+
+        /* ============================================================
+           BUILD DISCOVER QUERY
+           Returns a plain params object, used both for the API call
+           and for the preview URL, so the two can never disagree.
+           ============================================================ */
+        function buildDiscoverParams(page = 1) {
+            const params = {
+                include_adult: $("includeAdult").checked ? "true" : "false",
+                include_video: "false",
+                language: "en-US",
+                page: String(page),
+                sort_by: $("sortBy").value || "popularity.desc"
+            };
+
+            const provider = $("providerSelect").value;
+            const language = $("languageSelect").value;
+            const region = $("regionSelect").value;
+            const year = $("releaseYear").value;
+            const monetization = selectedValues($("monetizationSelect"));
+
+            if (provider) params.with_watch_providers = provider;
+            if (region) params.watch_region = region;
+            if (language) params.with_original_language = language;
+            if (year) params.primary_release_year = year;
+            if (monetization.length) params.with_watch_monetization_types = monetization.join("|");
+
+            const dateFrom = $("releaseDateFrom").value;
+            if (dateFrom) params["primary_release_date.gte"] = dateFrom;
+
+            const dateTo = $("releaseDateTo").value;
+            if (dateTo) params["primary_release_date.lte"] = dateTo;
+
+            const rating = $("minimumRating").value.trim();
+            if (rating) params["vote_average.gte"] = rating;
+
+            const votes = $("minimumVotes").value.trim();
+            if (votes) params["vote_count.gte"] = votes;
+
+            return params;
+        }
+
+        function updateQueryPreview() {
+            const url = new URL(TMDB_PROXY, window.location.origin);
+            url.searchParams.set("path", "/discover/movie");
+
+            for (const [key, value] of Object.entries(buildDiscoverParams(1))) {
+                if (value !== undefined && value !== null && value !== "") {
+                    url.searchParams.set(key, value);
+                }
+            }
+
+            state.lastUrl = url.toString();
+            $("queryPreviewUrl").textContent = state.lastUrl;
+            $("queryPreview").classList.add("show");       /* ff-qp uses .show */
+            $("copyQueryButton").style.display = "";        /* reveal copy btn */
+
+            /* dot on trigger if any non-default filter active */
+            updateFilterDot();
+        }
+
+
+        /* ============================================================
+           SEARCH
+           ============================================================ */
+        async function searchMovies(page = 1) {
+            clearError($("tmdbError"));
+            updateQueryPreview();
+
+            $("searchButton").disabled = true;
+            setStatus(`Searching TMDB — page ${page}...`);
+            $("movieGrid").innerHTML = "";
+            $("emptyState").classList.remove("active");
+            $("pagination").innerHTML = "";
+
+            try {
+                const data = await tmdbRequest("/discover/movie", buildDiscoverParams(page));
+
+                state.page = data.page || page;
+                state.totalPages = Math.min(data.total_pages || 0, TMDB_MAX_PAGE);
+                state.totalResults = data.total_results || 0;
+                state.results = data.results || [];
+
+                setStatus("");
+
+                if (!state.results.length) {
+                    $("resultsCount").textContent = "0 movies found.";
+                    $("emptyState").classList.add("active");
+                    return;
+                }
+
+                $("resultsCount").innerHTML =
+                    `<strong>${state.totalResults.toLocaleString()}</strong> movies found · ` +
+                    `page ${state.page} of ${state.totalPages}`;
+
+                renderMovies();
+                renderPagination();
+                window.scrollTo({ top: $("movieGrid").offsetTop - 120, behavior: "smooth" });
+
+            } catch (error) {
+                setStatus("");
+                $("resultsCount").textContent = "Search failed.";
+                showError($("tmdbError"), error.message || "Unable to search TMDB.");
+            } finally {
+                $("searchButton").disabled = false;
+            }
+        }
+
+
+        /* ============================================================
+           RENDER MOVIE CARDS
+           ============================================================ */
+        function renderMovies() {
+            const fragment = document.createDocumentFragment();
+            state.results.forEach(movie => fragment.appendChild(createMovieCard(movie)));
+            $("movieGrid").appendChild(fragment);
+        }
+
+        function createMovieCard(movie) {
+            const title = movie.title || "Untitled";
+            const rating = Number(movie.vote_average || 0).toFixed(1);
+            const language = (movie.original_language || "").toUpperCase();
+
+            const poster = movie.poster_path
+                ? `<img src="${TMDB_IMAGE}${escapeHTML(movie.poster_path)}" alt="${escapeHTML(title)}" loading="lazy">`
+                : `<div class="tmdb-card-fallback"><strong>${escapeHTML(title)}</strong><span>TMDB ${escapeHTML(movie.id)}</span></div>`;
+
+            const card = document.createElement("article");
+            card.className = "tmdb-card";
+            card.tabIndex = 0;
+
+            card.innerHTML = `
+        ${poster}
+        ${rating !== "0.0" ? `<div class="tmdb-card-rating">★ ${rating}</div>` : ""}
+        ${language ? `<div class="tmdb-card-language">${escapeHTML(language)}</div>` : ""}
+        <div class="tmdb-card-overlay">
+            <div class="tmdb-card-title">${escapeHTML(title)}</div>
+            <div class="tmdb-card-meta">${escapeHTML(yearOf(movie.release_date))} · TMDB ${escapeHTML(movie.id)}</div>
+            <div class="tmdb-card-play">View details</div>
+        </div>
+    `;
+
+            card.addEventListener("click", () => openMovieModal(movie));
+            card.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openMovieModal(movie);
+                }
+            });
+
+            return card;
+        }
+
+
+        /* ============================================================
+           PAGINATION
+           ============================================================ */
+        function addPaginationButton(label, page, { disabled = false, active = false } = {}) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "tmdb-page-btn" + (active ? " active" : "");
+            button.textContent = label;
+            button.disabled = disabled;
+            button.addEventListener("click", () => searchMovies(page));
+            $("pagination").appendChild(button);
+        }
+
+        function getPageRange(current, total) {
+            const pages = new Set([1, total]);
+            for (let i = Math.max(2, current - 2); i <= Math.min(total - 1, current + 2); i++) {
+                pages.add(i);
+            }
+            return [...pages].sort((a, b) => a - b);
+        }
+
+        function renderPagination() {
+            const container = $("pagination");
+            container.innerHTML = "";
+
+            if (state.totalPages <= 1) return;
+
+            addPaginationButton("‹ Prev", state.page - 1, { disabled: state.page <= 1 });
+
+            let previous = null;
+            getPageRange(state.page, state.totalPages).forEach(page => {
+                if (previous !== null && page - previous > 1) {
+                    const dots = document.createElement("span");
+                    dots.className = "tmdb-page-label";
+                    dots.textContent = "…";
+                    container.appendChild(dots);
+                }
+                addPaginationButton(String(page), page, { active: page === state.page });
+                previous = page;
+            });
+
+            addPaginationButton("Next ›", state.page + 1, { disabled: state.page >= state.totalPages });
+        }
+
+
+        /* ============================================================
+           MOVIE MODAL
+           ============================================================ */
+        async function openMovieModal(listMovie) {
+            // Show the modal immediately with what the list already knows.
+            $("modalTitle").textContent = listMovie.title || `TMDB ${listMovie.id}`;
+            $("modalMeta").innerHTML = "";
+            $("modalBackground").style.backgroundImage = listMovie.backdrop_path
+                ? `url("${TMDB_BACKDROP}${listMovie.backdrop_path}")`
+                : "none";
+
+            $("modalLoading").style.display = "block";
+            $("modalContent").hidden = true;
+            clearError($("modalError"));
+            resetPlayer();
+
+            $("movieModal").classList.add("active");
+            document.body.style.overflow = "hidden";
+
+            try {
+                // One request returns details and providers together.
+                const movie = await tmdbRequest(`/movie/${listMovie.id}`, {
+                    language: "en-US",
+                    append_to_response: "watch/providers"
+                });
+                populateModal(movie);
+            } catch (error) {
+                showError($("modalError"), error.message);
+            } finally {
+                $("modalLoading").style.display = "none";
+                $("modalContent").hidden = false;
+            }
+        }
+
+        function populateModal(movie) {
+            $("modalTitle").textContent = movie.title || "Untitled";
+
+            const meta = [];
+            if (movie.release_date) meta.push(`<span>${escapeHTML(yearOf(movie.release_date))}</span>`);
+            if (movie.runtime) meta.push(`<span>${movie.runtime} min</span>`);
+            if (movie.vote_average) meta.push(`<span class="tmdb-modal-rating">★ ${movie.vote_average.toFixed(1)} TMDB</span>`);
+            $("modalMeta").innerHTML = meta.join("");
+
+            if (movie.backdrop_path) {
+                $("modalBackground").style.backgroundImage = `url("${TMDB_BACKDROP}${movie.backdrop_path}")`;
+            }
+
+            $("modalOverview").textContent = movie.overview || "No description available.";
+
+            loadVidsrcPlayer(movie);
+            renderProviders(movie["watch/providers"]?.results || {});
+            renderDetails(movie);
+        }
+
+        /* ============================================================
+           VIDSRC PLAYER
+           ============================================================ */
+        const VIDSRC_INFO = "https://vidsrc.sh/info/movie";
+        let _vidsrcData = null;
+
+        async function loadVidsrcPlayer(movie) {
+            resetPlayer();
+            const id = movie.imdb_id || movie.id;
+            try {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 20000);
+                const res = await fetch(
+                    `${VIDSRC_INFO}/${encodeURIComponent(id)}.json`,
+                    { signal: ctrl.signal }
+                );
+                clearTimeout(timer);
+                if (!res.ok) throw new Error("not found");
+                const data = await res.json();
+                if (!data || data.status_code !== 200) throw new Error("no stream");
+
+                _vidsrcData = data;
+                $("srcBtnImdb").classList.toggle("disabled", !data.embed_url);
+                $("srcBtnTmdb").classList.toggle("disabled", !data.embed_url_tmdb);
+                $("sourceTitle").textContent = data.title || movie.title || "—";
+                $("sourceQuality").textContent = data.quality || "HD";
+
+                if (data.embed_url) setPlayerSrc(data.embed_url, "imdb");
+                else if (data.embed_url_tmdb) setPlayerSrc(data.embed_url_tmdb, "tmdb");
+                else showPlayerUnavail();
+            } catch {
+                showPlayerUnavail();
+                $("sourceTitle").textContent = movie.title || "—";
+            }
+        }
+
+        function setPlayerSrc(url, source) {
+            $("playerEmpty").style.display = "none";
+            $("playerUnavail").classList.remove("show");
+            $("vidsrcPlayer").src = url;
+            $("vidsrcPlayer").hidden = false;
+            $("srcBtnImdb").classList.toggle("active", source === "imdb");
+            $("srcBtnTmdb").classList.toggle("active", source === "tmdb");
+        }
+
+        function showPlayerUnavail() {
+            $("vidsrcPlayer").hidden = true;
+            $("vidsrcPlayer").src = "";
+            $("playerEmpty").style.display = "none";
+            $("playerUnavail").classList.add("show");
+        }
+
+        function resetPlayer() {
+            _vidsrcData = null;
+            $("vidsrcPlayer").src = "";
+            $("vidsrcPlayer").hidden = true;
+            $("playerEmpty").style.display = "";
+            $("playerUnavail").classList.remove("show");
+            $("srcBtnImdb").classList.remove("active", "disabled");
+            $("srcBtnTmdb").classList.remove("active", "disabled");
+            $("sourceTitle").textContent = "—";
+            $("sourceQuality").textContent = "—";
+        }
+
+        $("srcBtnImdb").addEventListener("click", () => {
+            if (_vidsrcData?.embed_url) setPlayerSrc(_vidsrcData.embed_url, "imdb");
+        });
+        $("srcBtnTmdb").addEventListener("click", () => {
+            if (_vidsrcData?.embed_url_tmdb) setPlayerSrc(_vidsrcData.embed_url_tmdb, "tmdb");
+        });
+
+        function renderProviders(byCountry) {
+            const region = $("regionSelect").value || DEFAULT_REGION;
+            const entry = byCountry[region];
+            const list = $("providerList");
+            $("providersTitle").textContent = `Where to watch (${region})`;
+
+            if (!entry) {
+                list.innerHTML = '<span class="tmdb-detail-value">No provider data for this region.</span>';
+                return;
+            }
+
+            const groups = [
+                ["flatrate", "Subscription"],
+                ["free", "Free"],
+                ["ads", "With ads"],
+                ["rent", "Rent"],
+                ["buy", "Buy"]
+            ];
+
+            const chips = groups.flatMap(([key, label]) =>
+                (entry[key] || []).map(p =>
+                    `<span class="tmdb-provider">${escapeHTML(p.provider_name)}<small>${label}</small></span>`
+                )
+            );
+
+            list.innerHTML = chips.length
+                ? chips.join("")
+                : '<span class="tmdb-detail-value">Not currently available here.</span>';
+        }
+
+        function renderDetails(movie) {
+            const imdbLink = movie.imdb_id
+                ? `<a href="https://www.imdb.com/title/${encodeURIComponent(movie.imdb_id)}/" target="_blank" rel="noopener noreferrer">${escapeHTML(movie.imdb_id)} ↗</a>`
+                : "—";
+
+            const details = [
+                ["Title", escapeHTML(movie.title || "—")],
+                ["Original Title", escapeHTML(movie.original_title || "—")],
+                ["Release Date", escapeHTML(movie.release_date || "—")],
+                ["Genres", escapeHTML((movie.genres || []).map(g => g.name).join(", ") || "—")],
+                ["TMDB Rating", movie.vote_average ? `${movie.vote_average.toFixed(1)} / 10 (${movie.vote_count.toLocaleString()} votes)` : "—"],
+                ["Original Language", escapeHTML((movie.original_language || "—").toUpperCase())],
+                ["Status", escapeHTML(movie.status || "—")],
+                ["TMDB ID", escapeHTML(movie.id)],
+                ["IMDb", imdbLink]
+            ];
+
+            $("movieDetails").innerHTML = details.map(([label, value]) => `
+        <div class="tmdb-detail">
+            <div class="tmdb-detail-label">${escapeHTML(label)}</div>
+            <div class="tmdb-detail-value">${value}</div>
+        </div>
+    `).join("");
+        }
+
+        function closeMovieModal() {
+            $("movieModal").classList.remove("active");
+            resetPlayer();
+            document.body.style.overflow = "";
+        }
+
+
+        /* ============================================================
+           EVENTS
+           ============================================================ */
+        $("searchButton").addEventListener("click", () => searchMovies(1));
+
+        $("resetButton").addEventListener("click", () => {
+            Array.from($("monetizationSelect").options).forEach(o => (o.selected = false));
+
+            $("providerSelect").value = "";
+            $("languageSelect").value = "";
+            $("releaseYear").value = "";
+            $("regionSelect").value = DEFAULT_REGION;
+            $("sortBy").value = "popularity.desc";
+
+            ["releaseDateFrom", "releaseDateTo", "minimumRating", "minimumVotes"]
+                .forEach(id => ($(id).value = ""));
+
+            $("includeAdult").checked = false;
+
+            $("queryPreview").classList.remove("show");
+            $("copyQueryButton").style.display = "none";
+            $("filterTrigger").classList.remove("active-filters");
+            clearError($("tmdbError"));
+        });
+
+        $("copyQueryButton").addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(state.lastUrl);
+                $("copyQueryButton").textContent = "Copied ✓";
+                setTimeout(() => ($("copyQueryButton").textContent = "Copy URL"), 1400);
+            } catch {
+                showError($("tmdbError"), "Clipboard access was blocked by the browser.");
+            }
+        });
+
+        // Changing the region changes which providers exist, so reload that list.
+        $("regionSelect").addEventListener("change", async () => {
+            try {
+                await loadProviders($("regionSelect").value);
+            } catch (error) {
+                showError($("tmdbError"), "Unable to reload providers. " + error.message);
+            }
+            updateQueryPreview();
+        });
+
+        // Keep the API URL preview in sync with every filter.
+        [
+            "providerSelect", "languageSelect", "monetizationSelect", "releaseYear",
+            "releaseDateFrom", "releaseDateTo", "sortBy", "minimumRating",
+            "minimumVotes", "includeAdult"
+        ].forEach(id => {
+            $(id).addEventListener("change", updateQueryPreview);
+        });
+
+        // Modal closing: X button, click on dark backdrop, or Escape key.
+        $("closeModal").addEventListener("click", closeMovieModal);
+        $("movieModal").addEventListener("click", event => {
+            if (event.target === $("movieModal")) closeMovieModal();
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && $("movieModal").classList.contains("active")) {
+                closeMovieModal();
+            }
+        });
+
+
+        /* ============================================================
+           FILTER PANEL TOGGLE
+           ============================================================ */
+
+        function updateFilterDot() {
+            const hasFilter =
+                $("providerSelect").value ||
+                ($("regionSelect").value && $("regionSelect").value !== DEFAULT_REGION) ||
+                $("languageSelect").value ||
+                $("releaseYear").value ||
+                $("releaseDateFrom").value ||
+                $("releaseDateTo").value ||
+                $("minimumRating").value ||
+                $("minimumVotes").value ||
+                selectedValues($("monetizationSelect")).length ||
+                $("includeAdult").checked;
+            $("filterTrigger").classList.toggle("active-filters", !!hasFilter);
+        }
+
+        (function initFilterToggle() {
+            const trigger = $("filterTrigger");
+            const panel = $("filterFloat");
+
+            function openPanel() {
+                panel.classList.add("open");
+                trigger.classList.add("open");
+            }
+            function closePanel() {
+                panel.classList.remove("open");
+                trigger.classList.remove("open");
+            }
+            function togglePanel() {
+                panel.classList.contains("open") ? closePanel() : openPanel();
+            }
+
+            trigger.addEventListener("click", togglePanel);
+            $("ffClose").addEventListener("click", closePanel);
+
+            /* close on outside click */
+            document.addEventListener("click", e => {
+                if (!panel.contains(e.target) && e.target !== trigger) closePanel();
+            });
+
+            /* close on Escape */
+            document.addEventListener("keydown", e => {
+                if (e.key === "Escape" && panel.classList.contains("open") &&
+                    !$("movieModal").classList.contains("active")) closePanel();
+            });
+
+            /* open panel on page load so user sees it */
+            openPanel();
+        })();
+
+        loadFilters();
+    </script>
+
+</body>
+
+</html>
