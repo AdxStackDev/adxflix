@@ -1,19 +1,22 @@
-/**
- * Local dev server — builds adxflix.html (injects token from .env.local)
- * and serves it on http://localhost:3000.
- *
- * Run:   node dev-server.js
- * Open:  http://localhost:3000
- *
- * Zero dependencies — only uses Node.js built-ins.
- */
-
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
 const root = __dirname;
 const PORT = 3000;
+
+const MIME = {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".json": "application/json",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".webp": "image/webp"
+};
 
 /* ---- read token from .env.local ---- */
 let token = process.env.TMDB_BEARER;
@@ -25,38 +28,37 @@ if (!token) {
     }
 }
 if (!token) {
-    console.error("\n  !  TMDB_BEARER not found in env or .env.local");
-    console.error("     Create .env.local with:  TMDB_BEARER=your_token_here\n");
+    console.error("\n  !  TMDB_BEARER not found in env or .env.local\n");
     process.exit(1);
 }
 
-/* ---- cache the HTML with token injected ---- */
-let html = fs.readFileSync(path.join(root, "adxflix.html"), "utf8");
-html = html.replace("__TMDB_BEARER__", token);
-
-const css = fs.existsSync(path.join(root, "layout.css"))
-    ? fs.readFileSync(path.join(root, "layout.css"))
-    : "";
-
-const MIME = {
-    ".html": "text/html; charset=utf-8",
-    ".css": "text/css; charset=utf-8"
-};
-
 http.createServer((req, res) => {
     const url = new URL(req.url, `http://localhost:${PORT}`);
+    let filePath = url.pathname === "/" ? "/adxflix.html" : url.pathname;
+    const resolved = path.resolve(root, "." + filePath);
 
-    if (url.pathname === "/" || url.pathname === "/adxflix.html") {
-        res.writeHead(200, { "Content-Type": MIME[".html"] });
-        res.end(html);
-    } else if (url.pathname === "/layout.css") {
-        res.writeHead(200, { "Content-Type": MIME[".css"] });
-        res.end(css);
-    } else {
-        res.writeHead(404, { "Content-Type": "text/plain" });
-        res.end("404 — " + url.pathname);
+    // prevent path traversal
+    if (!resolved.startsWith(root)) {
+        res.writeHead(403); return res.end("Forbidden");
     }
+
+    if (!fs.existsSync(resolved)) {
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        return res.end("404 — " + filePath);
+    }
+
+    const ext = path.extname(resolved);
+    let content = fs.readFileSync(resolved);
+
+    // inject token into any HTML file that has the placeholder
+    if (ext === ".html") {
+        content = content.toString().replace(/__TMDB_BEARER__/g, token);
+    }
+
+    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+    res.end(content);
+
 }).listen(PORT, () => {
-    console.log("\n  ADXFLIX running at  http://localhost:" + PORT + "\n");
-    console.log("  Press Ctrl+C to stop.\n");
+    console.log("\n  Dev server running at  http://localhost:" + PORT);
+    console.log("  Serving all files from: " + root + "\n");
 });
