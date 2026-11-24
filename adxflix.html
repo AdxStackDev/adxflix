@@ -1620,6 +1620,100 @@
             border-color: #555;
         }
 
+        /* ---------- favourite heart button on card ---------- */
+        .card-fav {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, .72);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            color: var(--text-3);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 0;
+            transition: color .18s, background .18s, transform .18s;
+            z-index: 3;
+        }
+
+        .card-fav:hover {
+            color: #ff6b81;
+            background: rgba(0,0,0,.88);
+            transform: scale(1.15);
+        }
+
+        .card-fav.is-fav {
+            color: #e50914;
+            background: rgba(229,9,20,.18);
+        }
+
+        .card-fav.is-fav .icon {
+            fill: #e50914;
+            stroke: #e50914;
+        }
+
+        /* When the card-hover overlay appears on hover, the heart button stays
+           visible above it via z-index: 3. */
+
+        /* ---------- navbar favourites button ---------- */
+        .nav-fav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 32px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line-strong);
+            background: var(--surface-2);
+            color: var(--text-3);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background .15s, color .15s, border-color .15s;
+            flex: none;
+        }
+
+        .nav-fav-btn:hover {
+            background: var(--surface-3);
+            color: var(--text);
+            border-color: #555;
+        }
+
+        .nav-fav-btn.active {
+            background: rgba(229,9,20,.18);
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .nav-fav-btn .icon {
+            font-size: 14px;
+        }
+
+        .nav-fav-btn.active .icon {
+            fill: var(--red);
+            stroke: var(--red);
+        }
+
+        .nav-fav-count {
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: var(--red);
+            color: #fff;
+            display: inline-grid;
+            place-items: center;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
         /* ---------- movie / tv tabs in navbar ---------- */
         .media-tabs {
             display: flex;
@@ -1839,6 +1933,9 @@
             <symbol id="i-activity" viewBox="0 0 24 24">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </symbol>
+            <symbol id="i-heart" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </symbol>
         </defs>
     </svg>
 
@@ -1858,6 +1955,11 @@
         </div>
 
         <div class="navbar-right">
+            <button class="nav-fav-btn" id="favNavBtn" type="button" aria-pressed="false" title="Favourites">
+                <svg class="icon" aria-hidden="true"><use href="#i-heart"/></svg>
+                <span></span>
+                <span class="nav-fav-count" id="favNavCount" hidden>0</span>
+            </button>
             <label class="select-wrap has-lead" title="Sort results">
                 <span class="lead"><svg class="icon" aria-hidden="true"><use href="#i-sort"/></svg></span>
                 <select class="select" id="sortBy" aria-label="Sort by">
@@ -1882,7 +1984,7 @@
             </label>
             <button class="ui-btn" id="filterTrigger" type="button" aria-haspopup="dialog" aria-controls="filterDrawer">
                 <svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg>
-                <span>Filters</span>
+                <span></span>
                 <span class="count-badge" id="filterBadge" hidden>0</span>
             </button>
         </div>
@@ -1906,7 +2008,7 @@
         <div class="state-box" id="emptyState">
             <svg class="icon" aria-hidden="true"><use href="#i-film"/></svg>
             <h2>Nothing found</h2>
-            <p>Nothing matches this combination of filters. Try removing a few of them or widening the release period.</p>
+            <p id="emptyMsg">Nothing matches this combination of filters. Try removing a few of them or widening the release period.</p>
             <button class="ui-btn" id="emptyClear" type="button"><svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>Clear all filters</button>
         </div>
 
@@ -2304,7 +2406,9 @@
             genres: [], genreMap: new Map(),
             langMap: new Map(), regionMap: new Map(),
             providers: [], provNames: new Map(), provExpanded: false,
-            applied: defaultFilters()
+            applied: defaultFilters(),
+            showingFavs: false,
+            allFavMovies: new Map()
         };
         let draft = defaultFilters();
 
@@ -2814,6 +2918,10 @@
 
             $("errorBox").classList.remove("show");
             $("emptyState").classList.remove("show");
+            // Restore default empty state text and show the clear button
+            $("emptyState").querySelector("h2").textContent = "Nothing found";
+            $("emptyMsg").textContent = "Nothing matches this combination of filters. Try removing a few of them or widening the release period.";
+            $("emptyClear").hidden = false;
             $("pagination").innerHTML = "";
 
             $("movieGrid").setAttribute("aria-busy", "true");
@@ -2877,6 +2985,7 @@
            ============================================================ */
         function renderMovies() {
             const fragment = document.createDocumentFragment();
+            cacheFavMovies(state.results);
             state.results.forEach(m => fragment.appendChild(createMovieCard(m)));
             $("movieGrid").appendChild(fragment);
         }
@@ -2888,6 +2997,9 @@
             const genres = (movie.genre_ids || []).slice(0, 2).map(id => state.genreMap.get(id)).filter(Boolean);
             const lang = (movie.original_language || "").toUpperCase();
             const fallback = `<div class="poster-fallback">${icon("film")}<span>${esc(title)}</span></div>`;
+            const fav = isFav(movie);
+            // Heart sits at bottom-right corner of the poster
+            const heartLeft = "";
 
             const card = document.createElement("article");
             card.className = "card";
@@ -2899,6 +3011,11 @@
                 <div class="card-poster">
                     ${movie.poster_path ? `<img src="${TMDB_IMAGE}${esc(movie.poster_path)}" alt="" loading="lazy">` : fallback}
                     ${lang ? `<span class="badge-lang">${esc(lang)}</span>` : ""}
+                    <button class="card-fav${fav ? " is-fav" : ""}" type="button" data-id="${movie.id}"
+                        aria-label="${fav ? "Remove from favourites" : "Add to favourites"}"
+                        title="${fav ? "Remove from favourites" : "Add to favourites"}">
+                        <svg class="icon${fav ? " icon-fill" : ""}" aria-hidden="true"><use href="#i-heart"/></svg>
+                    </button>
                     ${vote > 0 ? `<span class="badge-rating ${ratingClass(vote)}">${icon("star", "icon-fill")}${vote.toFixed(1)}</span>` : ""}
                     <div class="card-hover"><span class="play-btn">${icon("play", "icon-fill")}</span></div>
                 </div>
@@ -2909,6 +3026,20 @@
 
             const img = card.querySelector("img");
             if (img) img.addEventListener("error", () => { img.outerHTML = fallback; }, { once: true });
+
+            // Heart button click — toggle favourite without opening modal
+            card.querySelector(".card-fav").addEventListener("click", e => {
+                e.stopPropagation();
+                toggleFav(movie);
+                // Update icon fill state on the button just clicked
+                const btn = e.currentTarget;
+                const nowFav = isFav(movie);
+                const svgIcon = btn.querySelector(".icon");
+                btn.classList.toggle("is-fav", nowFav);
+                btn.setAttribute("aria-label", nowFav ? "Remove from favourites" : "Add to favourites");
+                btn.title = nowFav ? "Remove from favourites" : "Add to favourites";
+                if (nowFav) svgIcon.classList.add("icon-fill"); else svgIcon.classList.remove("icon-fill");
+            });
 
             card.addEventListener("click", () => openMovieModal(movie, card));
             card.addEventListener("keydown", e => {
@@ -3321,6 +3452,185 @@
 
 
         /* ============================================================
+           FAVOURITES  — stored in a cookie with no expiry (year 9999)
+           Format:  favs=movieId1,movieId2,...   (type-prefixed: m123, t456)
+           ============================================================ */
+        function favKey(id) {
+            return (mediaType === "tv" ? "t" : "m") + id;
+        }
+
+        function readFavCookie() {
+            const match = document.cookie.split("; ").find(r => r.startsWith("adxflix_favs="));
+            if (!match) return new Set();
+            return new Set(match.slice("adxflix_favs=".length).split(",").filter(Boolean));
+        }
+
+        function writeFavCookie(set) {
+            const val = [...set].join(",");
+            // expires=Fri, 31 Dec 9999 — effectively never expires
+            document.cookie = `adxflix_favs=${encodeURIComponent(val)}; path=/; expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=Lax`;
+        }
+
+        const favSet = readFavCookie();
+
+        function isFav(movie) {
+            return favSet.has(favKey(movie.id));
+        }
+
+        function toggleFav(movie) {
+            const key = favKey(movie.id);
+            if (favSet.has(key)) favSet.delete(key);
+            else favSet.add(key);
+            writeFavCookie(favSet);
+            updateFavNav();
+            // Update all card buttons for this movie currently visible
+            document.querySelectorAll(`.card-fav[data-id="${movie.id}"]`).forEach(btn => {
+                btn.classList.toggle("is-fav", favSet.has(key));
+                btn.setAttribute("aria-label", favSet.has(key) ? "Remove from favourites" : "Add to favourites");
+                btn.title = favSet.has(key) ? "Remove from favourites" : "Add to favourites";
+            });
+            // If we're in fav view, re-render to reflect removal
+            if (state.showingFavs) renderFavsView();
+        }
+
+        function updateFavNav() {
+            const count = favSet.size;
+            const btn = $("favNavBtn");
+            const badge = $("favNavCount");
+            badge.textContent = count;
+            badge.hidden = count === 0;
+            btn.setAttribute("aria-pressed", String(state.showingFavs));
+            btn.classList.toggle("active", state.showingFavs);
+        }
+
+        /* Show only favourited items (no API call needed — cached in cookie) */
+        function renderFavsView() {
+            $("errorBox").classList.remove("show");
+            $("emptyState").classList.remove("show");
+            $("pagination").innerHTML = "";
+            $("movieGrid").innerHTML = "";
+            $("movieGrid").setAttribute("aria-busy", "false");
+
+            // Collect all stored fav keys that match the current media prefix
+            const prefix = mediaType === "tv" ? "t" : "m";
+            const ids = [...favSet].filter(k => k.startsWith(prefix)).map(k => k.slice(1));
+
+            if (!ids.length) {
+                $("emptyState").querySelector("h2").textContent = "No favourites yet";
+                $("emptyState").querySelector("#emptyMsg").textContent = "Tap the ♥ on any poster to save it here.";
+                $("emptyClear").hidden = true;
+                $("emptyState").classList.add("show");
+                return;
+            }
+
+            // We only have list-level data for items currently in state.results;
+            // for uncached items we fetch from TMDB to get the real poster + title.
+            const fragment = document.createDocumentFragment();
+            ids.forEach(id => {
+                const cached = state.allFavMovies.get(id);
+                if (cached) {
+                    fragment.appendChild(createMovieCard(cached));
+                } else {
+                    // Render a loading skeleton, then upgrade it once the fetch resolves
+                    const wrapper = document.createElement("div");
+                    wrapper.innerHTML = `<div class="skel-poster"></div><div class="skel-line"></div><div class="skel-line short"></div>`;
+                    fragment.appendChild(wrapper);
+                    tmdbRequest(`/${mediaType}/${id}`, { language: "en-US" })
+                        .then(item => {
+                            // Build a minimal list-compatible object so createMovieCard works
+                            const listItem = {
+                                id: item.id,
+                                title: item.title, name: item.name,
+                                original_title: item.original_title, original_name: item.original_name,
+                                poster_path: item.poster_path, backdrop_path: item.backdrop_path,
+                                release_date: item.release_date, first_air_date: item.first_air_date,
+                                vote_average: item.vote_average,
+                                original_language: item.original_language,
+                                genre_ids: (item.genres || []).map(g => g.id)
+                            };
+                            state.allFavMovies.set(String(item.id), listItem);
+                            const card = createMovieCard(listItem);
+                            if (wrapper.parentNode) wrapper.parentNode.replaceChild(card, wrapper);
+                        })
+                        .catch(() => {
+                            // Fetch failed — show a minimal stub so the user can still remove it
+                            const card = createFavStubCard(id);
+                            if (wrapper.parentNode) wrapper.parentNode.replaceChild(card, wrapper);
+                        });
+                }
+            });
+            $("movieGrid").appendChild(fragment);
+        }
+
+        function createFavStubCard(id) {
+            const card = document.createElement("article");
+            card.className = "card";
+            card.tabIndex = 0;
+            card.setAttribute("role", "button");
+            card.setAttribute("aria-label", `Saved title ${id}. View details`);
+            card.innerHTML = `
+                <div class="card-poster">
+                    <div class="poster-fallback">${icon("film")}<span>#${esc(id)}</span></div>
+                    <button class="card-fav is-fav" type="button" data-id="${esc(id)}"
+                        aria-label="Remove from favourites" title="Remove from favourites">
+                        <svg class="icon icon-fill" aria-hidden="true"><use href="#i-heart"/></svg>
+                    </button>
+                    <div class="card-hover"><span class="play-btn">${icon("play", "icon-fill")}</span></div>
+                </div>
+                <div>
+                    <div class="card-title">Saved title</div>
+                    <div class="card-meta"><span>#${esc(id)}</span></div>
+                </div>`;
+
+            card.querySelector(".card-fav").addEventListener("click", e => {
+                e.stopPropagation();
+                // remove from favs
+                const key = (mediaType === "tv" ? "t" : "m") + id;
+                favSet.delete(key);
+                writeFavCookie(favSet);
+                updateFavNav();
+                if (state.showingFavs) renderFavsView();
+            });
+
+            card.addEventListener("click", () => {
+                // Try to fetch details by id
+                tmdbRequest(`/${mediaType}/${id}`, { language: "en-US" })
+                    .then(item => openMovieModal(item, card))
+                    .catch(() => {});
+            });
+            card.addEventListener("keydown", e => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    tmdbRequest(`/${mediaType}/${id}`, { language: "en-US" })
+                        .then(item => openMovieModal(item, card))
+                        .catch(() => {});
+                }
+            });
+            return card;
+        }
+
+        // A map of all movie objects we've seen (for fav stub fallback — declared in state above)
+
+        function cacheFavMovies(results) {
+            results.forEach(m => {
+                if (isFav(m)) state.allFavMovies.set(String(m.id), m);
+                // Also cache any we've stored before that might appear
+                if (favSet.has(favKey(m.id))) state.allFavMovies.set(String(m.id), m);
+            });
+        }
+
+        $("favNavBtn").addEventListener("click", () => {
+            state.showingFavs = !state.showingFavs;
+            updateFavNav();
+            if (state.showingFavs) {
+                renderFavsView();
+            } else {
+                searchMovies(state.page || 1, { scroll: false });
+            }
+        });
+
+
+        /* ============================================================
            INIT
            ============================================================ */
         /* ============================================================
@@ -3329,6 +3639,10 @@
         function switchMediaType(type) {
             if (type === mediaType) return;
             mediaType = type;
+
+            // Reset favourites view when switching type
+            state.showingFavs = false;
+            updateFavNav();
 
             // Update tab UI
             $("tabMovies").classList.toggle("active", type === "movie");
@@ -3376,6 +3690,7 @@
             renderMonetChips();
             renderVoteChips();
             renderPeriodChips();
+            updateFavNav();
             $("providerGrid").innerHTML = '<span class="muted">Loading services…</span>';
 
             // Restore filters/page from the URL so searches are shareable and survive a refresh.
