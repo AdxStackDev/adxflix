@@ -159,53 +159,8 @@
         }
 
         /* =====================================================
-           TOOLBAR  — removed, now part of navbar
-           Keep .toolbar styles as a slim results-count bar
+           TOOLBAR  — removed
         ===================================================== */
-        .toolbar {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: rgba(8, 8, 8, .82);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--line);
-        }
-
-        .toolbar-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            min-height: 44px;
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-
-        .results-count {
-            font-size: 13px;
-            color: var(--text-3);
-        }
-
-        .results-count strong {
-            color: var(--text);
-            font-size: 15px;
-        }
-
-        .sort-note {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 2px;
-            font-size: 11px;
-            color: var(--text-3);
-        }
-
-        .toolbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
 
         /* ---------- shared form controls ---------- */
         .select-wrap {
@@ -1589,11 +1544,6 @@
                 min-width: 0;
             }
 
-            .toolbar-inner {
-                flex-wrap: wrap;
-                gap: 6px;
-            }
-
             .grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 14px 8px;
@@ -1938,18 +1888,6 @@
         </div>
     </nav>
 
-    <!-- =====================================================
-         TOOLBAR  — results count only
-    ===================================================== -->
-    <div class="toolbar">
-        <div class="wrap toolbar-inner">
-            <div>
-                <div class="results-count" id="resultsCount" aria-live="polite">Loading…</div>
-                <div class="sort-note" id="sortNote" hidden></div>
-            </div>
-            <div class="active-filters" id="activeFilters"></div>
-        </div>
-    </div>
     <!-- =====================================================
          RESULTS
     ===================================================== -->
@@ -2713,15 +2651,15 @@
             badge.hidden = !items.length;
             badge.textContent = items.length;
 
-            $("activeFilters").innerHTML = items.length
+            $("activeFilters") && ($("activeFilters").innerHTML = items.length
                 ? items.map(it => `
                     <span class="af">${icon(it.icon)}<span>${esc(it.label)}</span>
                         <button type="button" class="af-x" data-kind="${it.kind}" data-value="${esc(it.value)}" aria-label="Remove filter: ${esc(it.label)}">${icon("x")}</button>
                     </span>`).join("") + '<button type="button" class="af-clear" id="afClear">Clear all</button>'
-                : "";
+                : "");
         }
 
-        $("activeFilters").addEventListener("click", e => {
+        $("activeFilters") && $("activeFilters").addEventListener("click", e => {
             if (e.target.closest("#afClear")) return clearAllFilters();
             const b = e.target.closest(".af-x");
             if (b) removeFilter(b.dataset.kind, b.dataset.value);
@@ -2877,15 +2815,17 @@
             $("errorBox").classList.remove("show");
             $("emptyState").classList.remove("show");
             $("pagination").innerHTML = "";
-            $("resultsCount").textContent = "Searching…";
+
             $("movieGrid").setAttribute("aria-busy", "true");
             $("sortBy").value = state.applied.sort;
             renderActiveFilters();
             showSkeleton();
 
             const note = $("sortNote");
-            note.hidden = !needsAutoVotes(state.applied);
-            note.innerHTML = `${icon("info")}Titles with fewer than ${AUTO_MIN_VOTES} votes are hidden when sorting by rating.`;
+            if (note) {
+                note.hidden = !needsAutoVotes(state.applied);
+                note.innerHTML = `${icon("info")}Titles with fewer than ${AUTO_MIN_VOTES} votes are hidden when sorting by rating.`;
+            }
 
             if (scroll) {
                 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2905,21 +2845,19 @@
                 $("movieGrid").setAttribute("aria-busy", "false");
 
                 if (!state.results.length) {
-                    $("resultsCount").textContent = "0 results";
+
                     $("emptyState").classList.add("show");
                     return;
                 }
 
                 const label = mediaType === "tv" ? "shows" : "movies";
-                $("resultsCount").innerHTML =
-                    `<strong>${state.totalResults.toLocaleString()}</strong> ${label} · page ${state.page} of ${state.totalPages.toLocaleString()}`;
+
                 renderMovies();
                 renderPagination();
             } catch (error) {
                 if (error.name === "AbortError" || seq !== searchSeq) return;
                 $("movieGrid").innerHTML = "";
                 $("movieGrid").setAttribute("aria-busy", "false");
-                $("resultsCount").textContent = "Search failed";
                 $("errorText").textContent = error.message || "Unable to reach TMDB.";
                 $("errorBox").classList.add("show");
             }
