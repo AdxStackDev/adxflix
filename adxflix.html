@@ -3462,7 +3462,12 @@
         function readFavCookie() {
             const match = document.cookie.split("; ").find(r => r.startsWith("adxflix_favs="));
             if (!match) return new Set();
-            return new Set(match.slice("adxflix_favs=".length).split(",").filter(Boolean));
+            try {
+                const val = decodeURIComponent(match.slice("adxflix_favs=".length));
+                return new Set(val.split(",").filter(Boolean));
+            } catch {
+                return new Set();
+            }
         }
 
         function writeFavCookie(set) {
