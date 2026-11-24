@@ -36,7 +36,8 @@ body {
     left: 0;
     right: 0;
 
-    height: 70px;
+    min-height: 60px;
+    height: auto;
 
     display: flex;
     align-items: center;
